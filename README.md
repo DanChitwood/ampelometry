@@ -1,5 +1,5 @@
 # Grapevine leaf morphospace
-*click on a point to open leaf image in a new tab*
+*click on a point to open leaf image in a new tab*: [danchitwood.github.io/ampelometry/](danchitwood.github.io/ampelometry/)
 
 A UMAP of the pairwise distance matrix of predictions of lobe and vein identity based on the Jaccard index of aligned leaves. The raw data used for this visual can be found at the following zenodo repository:
 
