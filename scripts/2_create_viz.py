@@ -32,12 +32,10 @@ def calculate_morphometrics(uid):
     ratio = -np.log(vein_area / blade_area) if (blade_area > 0 and vein_area > 0) else np.nan
 
     # 2. Solidity Calculation
-    # Get all non-black pixels (the leaf)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
     leaf_area = np.count_nonzero(binary)
     
-    # Calculate Convex Hull
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if contours:
         cnt = max(contours, key=cv2.contourArea)
@@ -63,8 +61,6 @@ def main():
     tqdm.pandas()
     results = meta_df['combined_id'].progress_apply(calculate_morphometrics)
     meta_df['vein_ratio'], meta_df['solidity'] = zip(*results)
-    
-    # Optional transformation to stretch the distribution
     meta_df['solidity_transformed'] = meta_df['solidity']**8
 
     def format_tooltip(row):
@@ -91,7 +87,6 @@ def main():
     datasets = sorted(meta_df['dataset'].unique())
     num_datasets = len(datasets)
     
-    # 1. Dataset Views
     for ds in datasets:
         sub = meta_df[meta_df['dataset'] == ds]
         fig.add_trace(go.Scattergl(
@@ -102,7 +97,6 @@ def main():
             visible=True
         ))
 
-    # 2. Vein Ratio View
     fig.add_trace(go.Scattergl(
         x=meta_df['x'], y=meta_df['y'], mode='markers', name="Vein Ratio View",
         marker=dict(size=6, color=meta_df['vein_ratio'], colorscale='Inferno', showscale=True, colorbar=dict(title="-ln(V/B)", x=1.02)),
@@ -110,7 +104,6 @@ def main():
         hovertemplate="<b>%{hovertext}</b><br>%{text}<extra>Vein View</extra>", visible=False
     ))
 
-    # 3. Solidity View (Transformed for better color stretch)
     fig.add_trace(go.Scattergl(
         x=meta_df['x'], y=meta_df['y'], mode='markers', name="Solidity View",
         marker=dict(size=6, color=meta_df['solidity_transformed'], colorscale='Inferno', showscale=True, colorbar=dict(title="Solidity^8", x=1.15)),
@@ -118,9 +111,16 @@ def main():
         hovertemplate="<b>%{hovertext}</b><br>%{text}<extra>Solidity View</extra>", visible=False
     ))
 
-    # Update Layout with 3-Way Toggle
+    # --- NEW TITLE CONFIGURATION ---
     fig.update_layout(
-        title=dict(text="<b>Ampelometry: Global Vitis Morphospace</b>", x=0.5, y=0.97, font=dict(size=24)),
+        title=dict(
+            text="Grapevine leaf morphospace<br><span style='font-size: 16px; font-style: italic;'>Click on a point to open leaf in a new tab</span>",
+            x=0.5, 
+            y=0.95, 
+            xanchor='center',
+            yanchor='top',
+            font=dict(size=24) # Main title size
+        ),
         updatemenus=[dict(
             type="buttons", direction="right", x=0.5, y=-0.15, xanchor='center',
             buttons=[
@@ -132,7 +132,7 @@ def main():
                      args=[{"visible": [False]*num_datasets + [False, True]}, {"showlegend": False}])
             ]
         )],
-        template='plotly_dark', margin=dict(t=80, b=150, l=50, r=150)
+        template='plotly_dark', margin=dict(t=100, b=150, l=50, r=150)
     )
 
     # JS Injection for Clicking
@@ -150,7 +150,7 @@ def main():
     
     with open(OUTPUT_HTML, "w") as f:
         f.write(html_str.replace("</body>", click_js))
-    print(f"✨ DONE: Website with Solidity and Clicking saved to {OUTPUT_HTML}")
+    print(f"✨ DONE: Website saved with updated title at {OUTPUT_HTML}")
 
 if __name__ == "__main__":
     main()
